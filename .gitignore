@@ -1,0 +1,23 @@
+# Çalışma klasörleri hariç tutuluyor
+companies/
+sample_data/
+
+# __pycache__ ve Python derleyici artıkları
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Jupyter notebook checkpoint'leri
+.ipynb_checkpoints
+
+# Streamlit cache ve ayar dosyaları
+.streamlit/
+.cache/
+*.log
+
+# VSCode ayarları
+.vscode/
+
+# MacOS ve sistem dosyaları
+.DS_Store
+Thumbs.db
