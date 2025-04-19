@@ -56,8 +56,8 @@ $ pip install -r requirements.txt
 # 4.  Export statements from Fintables and place them in ./companies/
 $ tree companies -L 2
 companies/
-└── ACSEL/
-    └── ACSEL (TRY).xlsx
+└── ASELS/
+    └── ASELS (TRY).xlsx
 
 # 5.  Run the app
 $ streamlit run app.py
