@@ -32,7 +32,7 @@ finsight_hub/                     # ← repo root
 │   └── 2_📈_Tek_Hisse_Analizi.py
 │
 └── companies/                    # Your Fintables Excel statements
-    └── ACSEL/ACSEL (TRY).xlsx
+    └── ASELS/ASELS (TRY).xlsx
 ```
 
 > **Why this layout?**
