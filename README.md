@@ -6,7 +6,7 @@
 
 ## 🙏 Teşekkür
 
-**Fintables** ekibine, bu projede kullanılan örnek verilerin paylaşılmasına izin verdikleri için özellikle teşekkür ederiz. 🙌
+**Fintables** ekibine, bu projede kullanılan örnek verilerin paylaşılmasına izin verdikleri için özellikle teşekkür ederiz.
 
 ---
 
