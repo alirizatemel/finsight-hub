@@ -1,110 +1,133 @@
-# FinSight Hub
+# 📊 FinSight Hub
 
-> **A multi‑page Streamlit toolkit that turns your Fintables‑exported Borsa İstanbul spreadsheets into instant, shareable insights.**
-
----
-
-## ✨ Key Features
-
-- **Modular architecture** – shared logic lives in `modules/`, while every page in `pages/` becomes a tab in the UI.
-- **Built‑in financial ratios** – Piotroski F‑Skor, Beneish M‑Skor, Graham & Peter Lynch scores, custom radar charts, and more.
-- **Excel‑first workflow** – just drop the **Fintables** XLSX exports (each at `companies/<SYMBOL>/<SYMBOL> (TRY).xlsx` with *Bilanço*, *Gelir Tablosu (Dönemsel)* and *Nakit Akış (Dönemsel)* sheets) and start exploring.
-- **Snappy Streamlit UI** – widgets, metrics, and cached data loaders keep interaction times low.
-- **100 % Python** – easy to extend, easy to deploy (Streamlit Cloud, Hugging Face, Docker, Heroku… you name it).
+> **Fintables’tan dışa aktarılan Borsa İstanbul Excel tablolarını, hızlı ve paylaşılabilir finansal analizlere dönüştüren çok sayfalı bir Streamlit aracı.**
 
 ---
 
-## 🗂️ Project Layout
+## 🙏 Teşekkür
+
+**Fintables** ekibine, bu projede kullanılan örnek verilerin paylaşılmasına izin verdikleri için özellikle teşekkür ederiz. 🙌
+
+---
+
+## ✨ Temel Özellikler
+
+- **Modüler yapı** – Ortak iş mantığı `modules/` klasöründedir; her `pages/` dosyası Streamlit arayüzünde bir sekme olur.
+- **Hazır finansal oranlar** – Piotroski F-Skor, Beneish M-Skor, Graham & Peter Lynch skorları, özel radar grafikler ve daha fazlası.
+- **Excel odaklı iş akışı** – Tek yapman gereken, Fintables çıktıklarını (`companies/<SEMBOL>/<SEMBOL> (TRY).xlsx`) klasörüne koymak ve analiz etmeye başlamak.
+- **Akıcı Streamlit arayüzü** – Widget'lar, metrikler ve önbellek sistemi ile yüksek performans.
+- **Tamamen Python** – Genişletmesi kolay, yayına alması kolay (Streamlit Cloud, Hugging Face, Docker, Heroku... ne istersen).
+
+---
+
+## 🎯 Projenin Amacı
+
+FinSight Hub, bireysel ya da kurumsal yatırımcıların Borsa İstanbul şirketlerine ait mali tabloları kolayca analiz edebilmesi için geliştirilmiş açık kaynaklı bir analiz platformudur. Excel’den başka hiçbir araca ihtiyaç duymadan, sadece Fintables verileriyle:
+
+- Şirketin mali yapısı ve finansal sağlığı hızlıca anlaşılır.
+- Yatırım yapılabilirlik açısından farklı metrikler (Piotroski, Graham, Lynch, Beneish) ile skorlamalar sunulur.
+- Serbest nakit akışı (FCF) üzerinden şirketin değerleme uygunluğu yorumlanabilir.
+
+Bu projeyle hedeflenen:
+- 📉 Finansal okuryazarlığı artırmak
+- 🔍 Şirket analizini standartlaştırmak
+- 🚀 Excel ile Python arasında bir köprü kurarak yatırım analizini demokratikleştirmektir.
+
+Veriye dayalı karar almak isteyen herkes için pratik ve esnek bir analiz platformu sunar.
+
+---
+
+## 🗂️ Proje Yapısı
 
 ```text
-finsight_hub/                     # ← repo root
+finsight_hub/                     # ← depo kök dizini
 │
-├── app.py                        # Streamlit entry point (router)
-├── requirements.txt              # PyPI deps
+├── app.py                        # Streamlit başlangıç dosyası
+├── requirements.txt              # Bağımlılıklar
 │
-├── modules/                      # Re‑usable business logic
+├── modules/                      # Yeniden kullanılabilir iş mantığı
 │   ├── __init__.py
 │   ├── data_loader.py            # → load_company_xlsx()
 │   └── calculations.py           # → f_score(), graham_score(), ...
 │
-├── pages/                        # Every file = a Streamlit page
+├── pages/                        # Her dosya = bir Streamlit sayfası
 │   ├── 1_📊_Bilanco_Radar.py
 │   └── 2_📈_Tek_Hisse_Analizi.py
 │
-└── companies/                    # Your Fintables Excel statements
+└── companies/                    # Fintables Excel tabloların
     └── ASELS/ASELS (TRY).xlsx
 ```
 
-> **Why this layout?**
-> `modules/` keeps non‑UI code testable and DRY, while `pages/` leverages Streamlit’s automatic multipage navigation.
+> **Neden bu yapı?**  
+> `modules/` iş mantığını test edilebilir tutar; `pages/` ise Streamlit'in çok sayfa desteğinden yararlanır.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Hızlı Başlangıç
 
 ```bash
-# 1.  Clone & enter the repo
-$ git clone https://github.com/your‑org/finsight_hub.git
+# 1. Repoyu klonla
+$ git clone https://github.com/senin-org/finsight_hub.git
 $ cd finsight_hub
 
-# 2.  Create a virtual environment (Python ≥ 3.10 recommended)
-$ python -m venv .venv && source .venv/bin/activate        # Windows: .venv\Scripts\activate
+# 2. Sanal ortam oluştur (Python ≥ 3.10 önerilir)
+$ python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scriptsctivate
 
-# 3.  Install dependencies
+# 3. Bağımlılıkları yükle
 $ pip install -r requirements.txt
 
-# 4.  Export statements from Fintables and place them in ./companies/
+# 4. Fintables'tan Excel çıktıklarını ./companies/ altına koy
 $ tree companies -L 2
 companies/
 └── ASELS/
     └── ASELS (TRY).xlsx
 
-# 5.  Run the app
+# 5. Uygulamayı çalıştır
 $ streamlit run app.py
 ```
 
-### Optional Docker run
+### (Opsiyonel) Docker ile çalıştırma
 
 ```bash
-# Build
+# İmajı oluştur
 $ docker build -t finsight_hub .
-# Serve on http://localhost:8501
+# http://localhost:8501 adresinden başlat
 $ docker run -p 8501:8501 -v $PWD/companies:/app/companies finsight_hub
 ```
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ Yapılandırma
 
-| Setting                         | Where                              | Default | Notes |
-|---------------------------------|------------------------------------|---------|-------|
-| **Excel directory**             | `load_company_xlsx(base_dir=...)`  | `companies/` | One sub‑folder per ticker. |
-| **Cache TTL**                   | `@st.cache_data(ttl=3600)`         | `3600 s` | Increase if files rarely change. |
-| **Page order & labels**         | Prefix (`1_`, `2_`) + emoji        | N/A     | Feel free to rename pages! |
-
----
-
-## 🧑‍💻 Contributing
-
-1. Fork → create feature branch (`git checkout -b feat/my‑amazing‑idea`)
-2. Commit tests/docs (run `pre‑commit run --all-files` if you use it)
-3. Push & open a PR.
-
-All major contributions require one approving review—feel free to request one.
+| Ayar                          | Nerede                              | Varsayılan | Notlar |
+|------------------------------|-------------------------------------|-------------|--------|
+| **Excel klasörü**           | `load_company_xlsx(base_dir=...)`  | `companies/` | Her sembol için bir alt klasör |
+| **Cache süresi (TTL)**     | `@st.cache_data(ttl=3600)`         | `3600 s`    | Dosyalar nadiren değişiyorsa artırılabilir |
+| **Sayfa sırası & etiket**  | Ön ek (`1_`, `2_`) + emoji        | Yok        | Sayfa adlarını dilediğin gibi değiştirebilirsin |
 
 ---
 
-## 📜 License
+## 🧑‍💻 Katkıda Bulunma
 
-This project is licensed under the **MIT License** – see [`LICENSE`](LICENSE) for details.
+1. Forkla → yeni bir özellik dalı oluştur (`git checkout -b ozellik/super-fikir`)
+2. Değişiklikleri yap ve commit et (isteğe bağlı: `pre-commit run --all-files`)
+3. PR açarak katkı sağla!
+
+Büyük katkılar en az bir onay gerektirir – birini etiketlemekten çekinme.
 
 ---
 
-## 🙏 Acknowledgements
+## 📜 Lisans
 
-- **Fintables** for providing the financial statement Excel exports that power this analysis.
-- Streamlit team for the awesome framework.
-- `pandas`, `numpy`, and `matplotlib` for doing the heavy lifting.
-- Thanks to the original Jupyter notebooks (*bilanco_radar.ipynb* & *tek_hisse_analizi.ipynb*) that inspired this consolidation.
+Bu proje **MIT Lisansı** ile sunulmaktadır – detaylar için [`LICENSE`](LICENSE) dosyasına bakabilirsiniz.
 
-Happy analyzing! 🎉
+---
+
+## 🙏 Teşekkürler
+
+- **Fintables** ekibine, finansal tablo Excel çıktıklarını sağladıkları için sonsuz teşekkürler.
+- Streamlit ekibine bu muhteşem framework için.
+- `pandas`, `numpy`, `matplotlib` kütüphanelerine alt yapı gücü için.
+- Orijinal Jupyter notebook geliştiricilerine (*bilanco_radar.ipynb* & *tek_hisse_analizi.ipynb*) ilhamları için.
+
+Keyifli analizler! 🎉
