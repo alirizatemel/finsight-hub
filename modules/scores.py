@@ -107,47 +107,45 @@ def calculate_beneish_m_score(company, balance, income, cashflow, curr, prev):
 def peter_lynch_score_card(row):
     row = row.iloc[0]
     score = 0
-    card = []
+    lines = []
 
     try:
-        # Gerekli değişkenler
-        market_cap = row['Piyasa Değeri']
-        operating_cash_flow = row['İşletme Faaliyetlerinden Nakit Akışları']
-        free_cash_flow = row['Yıllıklandırılmış Serbest Nakit Akışı']
-        fcf_yield = None 
-        # FCF Verimi = FCF / PD
-        if pd.notnull(free_cash_flow) and pd.notnull(market_cap) and market_cap > 0:
-            fcf_yield = free_cash_flow / market_cap
-            card.append(f"FCF Verimi: {fcf_yield:.2%} → {'✅ Güçlü' if fcf_yield >= 0.05 else '❌ Zayıf'}")
-            if fcf_yield >= 0.05:
-                score += 1
-        else:
-            card.append("FCF veya piyasa değeri verisi eksik")
+        market_cap = row.get("Piyasa Değeri")
+        operating_cf = row.get("İşletme Faaliyetlerinden Nakit Akışları")
+        fcf = row.get("Yıllıklandırılmış Serbest Nakit Akışı")
 
-        # Nakit Akışı Pozitif mi?
-        if pd.notnull(operating_cash_flow):
-            durum = operating_cash_flow > 0
-            card.append(f"İşletme Nakit Akışı = {operating_cash_flow:.0f} → {'✅ Pozitif' if durum else '❌ Negatif'}")
-            if durum:
-                score += 1
+        # FCF Verimi
+        if pd.notnull(fcf) and pd.notnull(market_cap) and market_cap > 0:
+            fcf_yield = fcf / market_cap
+            passed = fcf_yield >= 0.05
+            lines.append(f"- FCF Verimi: {fcf_yield:.2%} → {'✅ Güçlü' if passed else '❌ Zayıf'}")
+            score += int(passed)
         else:
-            card.append("İşletme cashflow akışı verisi eksik")
+            lines.append("- FCF veya piyasa değeri eksik")
 
-
-        # PD/FCF oranı düşük mü? (Nakde göre pahalı mı?)
-        if pd.notnull(market_cap) and pd.notnull(free_cash_flow) and free_cash_flow > 0:
-            price_to_fcf = market_cap / free_cash_flow
-            card.append(f"PD/FCF = {price_to_fcf:.1f} → {'✅ Ucuz' if price_to_fcf <= 15 else '❌ Pahalı'}")
-            if price_to_fcf <= 15:
-                score += 1
+        # Nakit Akışı
+        if pd.notnull(operating_cf):
+            passed = operating_cf > 0
+            lines.append(f"- İşletme Nakit Akışı: {operating_cf:.0f} → {'✅ Pozitif' if passed else '❌ Negatif'}")
+            score += int(passed)
         else:
-            card.append("PD/FCF hesaplanamıyor (veri eksik)")
+            lines.append("- İşletme Nakit Akışı eksik")
+
+        # PD/FCF
+        if pd.notnull(market_cap) and pd.notnull(fcf) and fcf > 0:
+            pd_fcf = market_cap / fcf
+            passed = pd_fcf <= 15
+            lines.append(f"- PD/FCF = {pd_fcf:.1f} → {'✅ Ucuz' if passed else '❌ Pahalı'}")
+            score += int(passed)
+        else:
+            lines.append("- PD/FCF hesaplanamıyor")
 
     except Exception as e:
-        card.append(f"⚠️ Hata: {e}")
+        lines.append(f"⚠️ Hata: {e}")
 
-    karne_metni = "\n".join(card) + f"\nToplam Peter Lynch Skoru: {score} / 3"
-    return score, karne_metni, fcf_yield
+    description = f"Peter Lynch Skoru: {score} / 3"
+    return score, description, lines
+
 
 def period_order(period_str):
     try:
@@ -175,57 +173,36 @@ def graham_score(row):
 def graham_score_card(row):
     row = row.iloc[0]
     score = 0
-    card = []
+    lines = []
 
-    if pd.notnull(row['F/K']):
-        durum = row['F/K'] < 15
-        card.append(f"F/K = {row['F/K']} → {'✅ Uygun' if durum else '❌ Uygun değil'}")
-        if durum: score += 1
-    else:
-        card.append("F/K = ⚠️ F/K verisi eksik")
+    kriterler = [
+        ("F/K", row.get("F/K"), lambda x: x < 15, "F/K < 15"),
+        ("PD/DD", row.get("PD/DD"), lambda x: x < 1.5, "PD/DD < 1.5"),
+        ("Cari Oran", row.get("Cari Oran"), lambda x: 2 < x < 100, "2 < Cari Oran < 100"),
+        ("Nakit Akışı", row.get("İşletme Faaliyetlerinden Nakit Akışları"), lambda x: x > 0, "İşletme Nakit Akışı > 0"),
+        ("Serbest Nakit Akışı", row.get("Yıllıklandırılmış Serbest Nakit Akışı"), lambda x: x > 0, "Yıllıklandırılmış FCF > 0")
+    ]
 
-    if pd.notnull(row['PD/DD']):
-        durum = row['PD/DD'] < 1.5
-        card.append(f"PD/DD = {row['PD/DD']} → {'✅ Uygun' if durum else '❌ Uygun değil'}")
-        if durum: score += 1
-    else:
-        card.append("PD/DD verisi eksik")
+    for label, value, condition, desc in kriterler:
+        if pd.notnull(value):
+            passed = condition(value)
+            lines.append(f"- {label} = {value} → {'✅' if passed else '❌'} ({desc})")
+            score += int(passed)
+        else:
+            lines.append(f"- {label} verisi eksik")
 
-    if pd.notnull(row['Cari Oran']):
-        durum = 2 < row['Cari Oran'] < 100
-        card.append(f"Cari Oran = {row['Cari Oran']} → {'✅ Uygun' if durum else '❌ Uygun değil'}")
-        if durum: score += 1
-    else:
-        card.append("Cari Oran verisi eksik")
+    description = f"Graham Skoru: {score} / 5"
+    return score, description, lines
 
-    if pd.notnull(row['İşletme Faaliyetlerinden Nakit Akışları']):
-        durum = row['İşletme Faaliyetlerinden Nakit Akışları'] > 0
-        card.append(f"Nakit Akışı = {row['İşletme Faaliyetlerinden Nakit Akışları']} → {'✅ Pozitif' if durum else '❌ Negatif'}")
-        if durum: score += 1
-    else:
-        card.append("Nakit Akışı verisi eksik")
-
-    if pd.notnull(row['Yıllıklandırılmış Serbest Nakit Akışı']):
-        durum = row['Yıllıklandırılmış Serbest Nakit Akışı'] > 0
-        card.append(f"Serbest Nakit Akışı = {row['Yıllıklandırılmış Serbest Nakit Akışı']} → {'✅ Pozitif' if durum else '❌ Negatif'}")
-        if durum: score += 1
-    else:
-        card.append("Serbest Nakit Akışı verisi eksik")
-
-    karne_metni = "\n".join(card) + f"\nToplam Graham Skoru: {score} / 5"
-    return score, karne_metni
 
 def m_skor_karne_yorum(m_skor):
     if m_skor is None:
-        return "M-Skor verisi eksik"
+        return "M-Skor verisi eksik", ["❌ M-Skor hesaplanamadı"]
 
-    yorum = ""
-    yorum += f"M-Skor: {m_skor:.2f} → "
-    if m_skor < -2.22:
-        yorum += "✅ Düşük risk (finansal manipülasyon ihtimali düşük)"
-    else:
-        yorum += "⚠️ Yüksek risk (bilançoda bozulma/makyaj ihtimali olabilir)"
-    return yorum
+    passed = m_skor < -2.22
+    yorum = "✅ Düşük risk (finansal manipülasyon ihtimali düşük)" if passed else "⚠️ Yüksek risk (bozulma/makyaj riski)"
+    return f"{m_skor:.2f}", [f"M-Skor = {m_skor:.2f} → {yorum}"]
+
 
 def f_skor_karne_yorum(f_score):
     if f_score is None:
@@ -242,76 +219,77 @@ def f_skor_karne_yorum(f_score):
 
 def fcf_yield_time_series(company, row):
     try:
-        # Excel verisini oku
-        _, _, cashflow_df=load_financial_data(company)
+        _, _, cashflow_df = load_financial_data(company)
+        cashflow_df = cashflow_df.set_index("Kalem")
 
         if "İşletme Faaliyetlerinden Nakit Akışları" not in cashflow_df.index:
-            print("⛔ 'İşletme Faaliyetlerinden Nakit Akışları' verisi bulunamadı.")
-            return None
+            st.warning("⛔ İşletme nakit akışı verisi bulunamadı.")
+            return
 
-        # İşletme nakit akışı ve yatırım nakit akışı verilerini çek
-        operating_cf_series = cashflow_df.loc["İşletme Faaliyetlerinden Nakit Akışları"]
-        
-        # Yatırım harcamaları olarak genelde "Maddi ve Maddi Olmayan Duran Varlık Alımları" (negatif değer olur)
+        # OFCF + CAPEX → FCF hesapla
+        ofcf = cashflow_df.loc["İşletme Faaliyetlerinden Nakit Akışları"]
+
         if "Maddi ve Maddi Olmayan Duran Varlık Alımları" in cashflow_df.index:
-            capex_series = cashflow_df.loc["Maddi ve Maddi Olmayan Duran Varlık Alımları"]
+            capex = cashflow_df.loc["Maddi ve Maddi Olmayan Duran Varlık Alımları"]
         elif "Yatırım Faaliyetlerinden Kaynaklanan Nakit Akışları" in cashflow_df.index:
-            capex_series = cashflow_df.loc["Yatırım Faaliyetlerinden Kaynaklanan Nakit Akışları"]
+            capex = cashflow_df.loc["Yatırım Faaliyetlerinden Kaynaklanan Nakit Akışları"]
         else:
-            print("⛔ Yatırım harcamaları verisi bulunamadı.")
-            return None
+            st.warning("⛔ Yatırım harcamaları (CAPEX) verisi eksik.")
+            return
 
-        # FCF = OFCF - CAPEX
-        fcf_series = operating_cf_series - capex_series
+        fcf_series = ofcf - capex
 
-        # Piyasa değeri (son dönem için alınır, sabit tutulur)
-        market_cap = row['Piyasa Değeri']
-        if market_cap.empty or market_cap.values[0] <= 0:
-            print("⛔ Piyasa değeri geçersiz.")
-            return None
-        pdg = market_cap.values[0]
+        # Piyasa değeri
+        try:
+            market_cap = pd.to_numeric(row["Piyasa Değeri"], errors="coerce").squeeze()
+            if pd.isna(market_cap) or market_cap <= 0:
+                st.warning("⛔ Geçersiz piyasa değeri.")
+                return
+        except Exception as e:
+            st.warning(f"⛔ Piyasa değeri okunamadı: {e}")
+            return
 
-        fcf_yield = fcf_series / pdg
-        fcf_yield = fcf_yield.dropna()
-        
-        sorted_index = sorted(fcf_yield.index, key=period_order)
-        fcf_yield = fcf_yield[sorted_index]
-        
-        df_sonuç = pd.DataFrame({
-            "Dönem": fcf_yield.index,
-            "FCF Verimi": fcf_yield.values
-        })
+        # FCF verimi
+        fcf_yield = (fcf_series / market_cap * 100).dropna()
+        fcf_yield = fcf_yield.loc[~fcf_yield.index.duplicated()]
+        sorted_idx = sorted(fcf_yield.index, key=period_order)
+        fcf_yield = fcf_yield[sorted_idx]
 
-        plt.figure(figsize=(10, 5))
-        plt.plot(df_sonuç["Dönem"], df_sonuç["FCF Verimi"] * 100, marker='o')
-        plt.title(f"{company} - FCF Verimi Zaman Serisi")
-        plt.ylabel("FCF Verimi (%)")
-        plt.xlabel("Dönem")
-        plt.grid(True)
+        # Grafik çizimi
+        fig, ax = plt.subplots(figsize=(10, 5))
+        x = [period_order(p) for p in fcf_yield.index]
+        y = fcf_yield.values
+
+        ax.plot(x, y, marker="o", linestyle="-", label="FCF Verimi (%)", color="tab:blue")
+        ax.fill_between(x, 0, y, alpha=0.1, color="tab:blue")
+
+        ax.set_title(f"{company} – FCF Verimi Zaman Serisi")
+        ax.set_ylabel("FCF Verimi (%)")
+        ax.set_xlabel("Dönem")
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+        ax.grid(True)
         plt.xticks(rotation=45)
         plt.tight_layout()
-        plt.show()
-            
-        # Veriyi sadeleştir
-        #return pd.DataFrame({
-        #    "Dönem": fcf_yield.index,
-        #    "FCF Verimi": fcf_yield.values
-        #})
+
+        st.pyplot(fig)
 
     except Exception as e:
-        print(f"⚠️ {company} için FCF zaman serisi hatası: {e}")
-        return None
+        st.error(f"⚠️ {company} için grafik oluşturulamadı: {e}")
+
 
 def fcf_detailed_analysis(company, row):
-    # Excel verisini oku
-    _, income_df, cashflow_df=load_financial_data(company)
+    # 1) Excel verilerini oku
+    _, income_df, cashflow_df = load_financial_data(company)
 
-    # Gerekli kalemleri al
-    sales_series = income_df.loc["Satış Gelirleri"]
-    net_profit = cashflow_df.loc["Dönem Karı (Zararı)"]
+    income_df = income_df.set_index("Kalem")
+    cashflow_df = cashflow_df.set_index("Kalem")
+
+    # 3) Temel seriler
+    sales_series        = income_df.loc["Satış Gelirleri"]
+    net_profit_series   = cashflow_df.loc["Dönem Karı (Zararı)"]
     operating_cf_series = cashflow_df.loc["İşletme Faaliyetlerinden Nakit Akışları"]
 
-    # CAPEX için öncelikli kalem
+    # 4) CAPEX seçimi
     if "Maddi ve Maddi Olmayan Duran Varlık Alımları" in cashflow_df.index:
         capex_series = cashflow_df.loc["Maddi ve Maddi Olmayan Duran Varlık Alımları"]
     elif "Yatırım Faaliyetlerinden Kaynaklanan Nakit Akışları" in cashflow_df.index:
@@ -319,40 +297,35 @@ def fcf_detailed_analysis(company, row):
     else:
         raise ValueError("CAPEX verisi bulunamadı.")
 
-    # FCF hesapla
-    fcf_series = operating_cf_series - capex_series
-    
-    # Piyasa değeri (son dönem için alınır, sabit tutulur)
-    market_cap = row['Piyasa Değeri']
-    
-    if market_cap.empty or market_cap.values[0] <= 0:
-        print("⛔ Piyasa değeri geçersiz.")
+    # 5) FCF ve FCF verimi
+    fcf_series   = operating_cf_series - capex_series
+    market_cap   = (pd.to_numeric(row["Piyasa Değeri"], errors="coerce").squeeze())
+    if pd.isna(market_cap) or market_cap <= 0:
+        print("⛔ Geçersiz piyasa değeri — FCF verimi hesaplanamadı.")
         return None
-    
-    pdg = market_cap.values[0]
+    fcf_yield = (fcf_series / market_cap * 100).dropna()
 
-    fcf_yield = fcf_series / pdg
-    fcf_yield = fcf_yield.dropna()
-    
-
-    # Tablolaştır
+    # 6) DataFrame oluştur (dönemler index)
     df = pd.DataFrame({
-        "Satışlar": sales_series,
-        "Net Kâr": net_profit,
-        "Faaliyet Nakit Akışı": operating_cf_series,
-        "CAPEX": capex_series,
-        "FCF": fcf_series,
-        "FCF Verimi (%)": fcf_yield * 100
+        "Satışlar"              : sales_series,
+        "Net Kâr"              : net_profit_series,
+        "Faaliyet Nakit Akışı" : operating_cf_series,
+        "CAPEX"                : capex_series,
+        "FCF"                  : fcf_series,
+        "FCF Verimi (%)"       : fcf_yield,
     })
 
-    # ❗ Sütunları tarih sırasına göre sırala
-    sorted_columns = sorted(df.columns, key=period_order)
-    df = df[sorted_columns]
+    # 7) Dönemleri kronolojik sıraya koy
+    df = df.loc[sorted(df.index, key=period_order)]
+
     return df
 
 def fcf_detailed_analysis_plot(company, row):
     # Excel verisini oku
-    _, income_df, cashflow_df=load_financial_data(company)
+    _, income_df, cashflow_df = load_financial_data(company)
+
+    income_df = income_df.set_index("Kalem")
+    cashflow_df = cashflow_df.set_index("Kalem")
 
     # Verileri çek
     sales_series = income_df.loc["Satış Gelirleri"]
@@ -369,16 +342,14 @@ def fcf_detailed_analysis_plot(company, row):
 
     # FCF ve FCF Verimi
     fcf_series = operating_cf_series - capex_series
-    
-    # Piyasa değeri (son dönem için alınır, sabit tutulur)
+
     market_cap = row['Piyasa Değeri']
     if market_cap.empty or market_cap.values[0] <= 0:
         print("⛔ Piyasa değeri geçersiz.")
         return None
     pdg = market_cap.values[0]
 
-    fcf_yield = fcf_series / pdg
-    fcf_yield = fcf_yield.dropna()
+    fcf_yield = (fcf_series / pdg * 100).dropna()
 
     # Tablolaştır
     df = pd.DataFrame({
@@ -387,7 +358,7 @@ def fcf_detailed_analysis_plot(company, row):
         "Faaliyet Nakit Akışı": operating_cf_series,
         "CAPEX": capex_series,
         "FCF": fcf_series,
-        "FCF Verimi (%)": fcf_yield * 100
+        "FCF Verimi (%)": fcf_yield
     }).T
 
     # Dönemleri sırala
@@ -395,11 +366,10 @@ def fcf_detailed_analysis_plot(company, row):
     df = df.sort_index(key=lambda x: [period_order(d) for d in x])
     df.index = pd.to_datetime(df.index, format="%Y/%m", errors="coerce")
 
-    # Hareketli ortalamalar
     df_ma = df.rolling(3).mean()
 
     # Grafik çizimi
-    x = mdates.date2num(df.index)
+    x = df.index
     fig, axes = plt.subplots(5, 1, figsize=(14, 16), sharex=True)
 
     for i, (kolon, renk, ma_renk) in enumerate([
@@ -409,10 +379,11 @@ def fcf_detailed_analysis_plot(company, row):
         ("CAPEX", "tab:orange", "gold"),
         ("FCF Verimi (%)", "tab:red", "tomato"),
     ]):
-        y = df[kolon].to_numpy() / (1e9 if "Verimi" not in kolon else 1)
-        y_ma = df_ma[kolon].to_numpy() / (1e9 if "Verimi" not in kolon else 1)
-        axes[i].plot_date(x, y, linestyle='-', marker='o', color=renk, label=kolon)
-        axes[i].plot_date(x, y_ma, linestyle='--', color=ma_renk, label="Hareketli Ortalama")
+        y = df[kolon] / (1e9 if "Verimi" not in kolon else 1)
+        y_ma = df_ma[kolon] / (1e9 if "Verimi" not in kolon else 1)
+
+        axes[i].plot(x, y, linestyle='-', marker='o', color=renk, label=kolon)
+        axes[i].plot(x, y_ma, linestyle='--', color=ma_renk, label="Hareketli Ortalama")
         axes[i].fill_between(x, 0, y, alpha=0.1, color=renk)
         axes[i].set_ylabel(kolon + ("\n(Milyar TL)" if "Verimi" not in kolon else ""))
         axes[i].legend()
@@ -423,76 +394,110 @@ def fcf_detailed_analysis_plot(company, row):
     fig.suptitle(f"{company} | FCF Odaklı Finansal Analiz", fontsize=16)
     plt.xticks(rotation=45)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    plt.show()
+
+    # Artık show() değil, Streamlit ile gösterim:
+    st.pyplot(fig)
 
 def calculate_scores(company, row, balance, income, cashflow, current_period, previous_period):
-    f_score, detail = calculate_piotroski_f_score(row, balance, income,
-                                          current_period, previous_period)
-    f_karne = f_skor_karne_yorum(f_score)    
+    # 1. Piotroski F-Skor
+    f_score, detail = calculate_piotroski_f_score(row, balance, income, current_period, previous_period)
+    f_karne = f_skor_karne_yorum(f_score)
 
+    # 2. Beneish M-Skor
     m_skor = calculate_beneish_m_score(company, balance, income, cashflow, current_period, previous_period)
-    m_karne = m_skor_karne_yorum(m_skor)
+    m_karne, m_lines = m_skor_karne_yorum(m_skor)
 
-    graham_skor, graham_karne = graham_score_card(row)
-    lynch_skor, lynch_karne, _ = peter_lynch_score_card(row)
+    # 3. Graham Skoru
+    graham_skor, graham_karne, graham_lines = graham_score_card(row)
+
+    # 4. Peter Lynch Skoru
+    lynch_skor, lynch_karne, lynch_lines = peter_lynch_score_card(row)
 
     return {
         "f_score": f_score,
         "f_karne": f_karne,
         "m_skor": m_skor,
         "m_karne": m_karne,
+        "m_lines": m_lines,
         "graham_skor": graham_skor,
         "graham_karne": graham_karne,
+        "graham_lines": graham_lines,
         "lynch_skor": lynch_skor,
         "lynch_karne": lynch_karne,
+        "lynch_lines": lynch_lines,
         "detail": detail
     }
 
+
 def generate_report(company, scores, show_details=False):
-    text = f"""══════════════════════════════════
-{company}
-══════════════════════════════════
-{scores['f_karne']}
-{scores['m_karne']}
-Graham-Skor: {scores['graham_skor']}
-Lynch-Skor : {scores['lynch_skor']}
-"""
+    """Skor nesnesinden okunabilir bir metin raporu üret."""
+    lines = [
+        f"📌 Şirket: {company}",
+        f"Piotroski F-Skor: {scores['f_karne']}",
+        f"Beneish M-Skor: {scores['m_karne']}",
+        f"Graham Skoru: {scores['graham_skor']}",
+        f"Peter Lynch Skoru: {scores['lynch_skor']}",
+        ""
+    ]
 
     if show_details:
-        for k, v in scores["detail"].items():
-            text += f"{k}: {v}\n"
+        lines.append("🔍 F-Skor Detayları:")
+        for k, v in scores.get("detail", {}).items():
+            lines.append(f"- {k}: {v}")
 
-    text += "\n[GRAHAM KARNE]\n" + scores["graham_karne"]
-    text += "\n"
-    text += "\n[LYNCH KARNE]\n" + scores["lynch_karne"]
+    lines.append("\n🧾 Graham Karne:")
+    lines.append(scores.get("graham_karne", "-"))
 
-    return text
+    lines.append("\n🧾 Lynch Karne:")
+    lines.append(scores.get("lynch_karne", "-"))
 
-def format_report_as_html(company, text, m_skor):
-    background = "#fff8dc" if m_skor is not None and m_skor > -1.78 else "#f9f9f9"
-    satirlar = text.split("\n")
-    company = satirlar[0].strip("═").strip()
+    return lines
 
-    html = f"""
-    <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ddd; background: {background}; border-radius: 8px;">
-        <h3 style="margin-top:0; color:#333;">🏢 {company}</h3>
-        <pre style="font-family: monospace; white-space: pre-wrap; color: #222;">
-        {chr(10).join(satirlar[1:])}
-        </pre>
-    </div>
-    """
-    return html
-
-def show_company_scorecard(company, row, current_period, previous_period, show_details=False):
+def show_company_scorecard(company, row, current_period, previous_period):
+    """Tüm süreci birleştirip skor kartını ekrana bas."""
     try:
         balance, income, cashflow = load_financial_data(company)
-        scores = calculate_scores(company, row, balance, income, cashflow,
-                                  current_period, previous_period)
-        report = generate_report(company, scores, show_details)
-        html = format_report_as_html(company, report, scores["m_skor"])
-        st.markdown(f"<div style='max-height: 700px; overflow-y: scroll;'>{html}</div>", unsafe_allow_html=True)
+        scores = calculate_scores(
+            company,
+            row,
+            balance,
+            income,
+            cashflow,
+            current_period,
+            previous_period,
+        )
+
+        # === Genel Başlık ===
+        st.subheader(f"📌 Şirket: {company}")
+
+        # === Ana Skorlar ===
+        # === F-Detayları  ===
+        st.markdown(f"**Piotroski F-Skor:** {scores['f_karne']}")
+        with st.expander("🧾 F-Skor Detayları", expanded=False):
+            for k, v in scores.get("detail", {}).items():
+                st.markdown(f"- {k}: {v}")
+        
+        # === M-Skor Detayları ===
+        st.markdown(f"**Beneish M-Skor:** {scores['m_karne']}")
+        with st.expander("🧾 Beneish M‑Skor Yorumu", expanded=False):
+            for line in scores.get("m_lines", []):
+                st.markdown(line)
+        
+        # === Graham Karne ===
+        st.markdown(f"**Graham Skoru:** {scores['graham_skor']} / 5")
+        with st.expander("🧾 Graham Kriterleri", expanded=False):
+            for line in scores.get("graham_lines", []):
+                st.markdown(line)
+
+        # === Peter Lynch Karne ===
+        st.markdown(f"**Peter Lynch Skoru:** {scores['lynch_skor']} / 3")
+        with st.expander("🧾 Peter Lynch Kriterleri", expanded=False):
+            for line in scores.get("lynch_lines", []):
+                st.markdown(line)
+
     except FileNotFoundError as e:
         st.error(f"⛔ Dosya bulunamadı: {e}")
     except Exception as e:
         st.error(f"⚠️ Hata oluştu: {e}")
+
 
