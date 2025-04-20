@@ -10,16 +10,6 @@
 
 ---
 
-## ✨ Temel Özellikler
-
-- **Modüler yapı** – Ortak iş mantığı `modules/` klasöründedir; her `pages/` dosyası Streamlit arayüzünde bir sekme olur.
-- **Hazır finansal oranlar** – Piotroski F-Skor, Beneish M-Skor, Graham & Peter Lynch skorları, özel radar grafikler ve daha fazlası.
-- **Excel odaklı iş akışı** – Tek yapman gereken, Fintables çıktıklarını (`companies/<SEMBOL>/<SEMBOL> (TRY).xlsx`) klasörüne koymak ve analiz etmeye başlamak.
-- **Akıcı Streamlit arayüzü** – Widget'lar, metrikler ve önbellek sistemi ile yüksek performans.
-- **Tamamen Python** – Genişletmesi kolay, yayına alması kolay (Streamlit Cloud, Hugging Face, Docker, Heroku... ne istersen).
-
----
-
 ## 🎯 Projenin Amacı
 
 FinSight Hub, bireysel ya da kurumsal yatırımcıların Borsa İstanbul şirketlerine ait mali tabloları kolayca analiz edebilmesi için geliştirilmiş açık kaynaklı bir analiz platformudur. Excel’den başka hiçbir araca ihtiyaç duymadan, sadece Fintables verileriyle:
@@ -34,6 +24,16 @@ Bu projeyle hedeflenen:
 - 🚀 Excel ile Python arasında bir köprü kurarak yatırım analizini demokratikleştirmektir.
 
 Veriye dayalı karar almak isteyen herkes için pratik ve esnek bir analiz platformu sunar.
+
+---
+
+## ✨ Temel Özellikler
+
+- **Modüler yapı** – Ortak iş mantığı `modules/` klasöründedir; her `pages/` dosyası Streamlit arayüzünde bir sekme olur.
+- **Hazır finansal oranlar** – Piotroski F-Skor, Beneish M-Skor, Graham & Peter Lynch skorları, özel radar grafikler ve daha fazlası.
+- **Excel odaklı iş akışı** – Tek yapman gereken, Fintables çıktıklarını (`companies/<SEMBOL>/<SEMBOL> (TRY).xlsx`) klasörüne koymak ve analiz etmeye başlamak.
+- **Akıcı Streamlit arayüzü** – Widget'lar, metrikler ve önbellek sistemi ile yüksek performans.
+- **Tamamen Python** – Genişletmesi kolay, yayına alması kolay (Streamlit Cloud, Hugging Face, Docker, Heroku... ne istersen).
 
 ---
 
