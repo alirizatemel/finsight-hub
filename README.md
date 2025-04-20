@@ -51,8 +51,8 @@ finsight_hub/                     # ← depo kök dizini
 │   └── calculations.py           # → f_score(), graham_score(), ...
 │
 ├── pages/                        # Her dosya = bir Streamlit sayfası
-│   ├── 1_📊_Bilanco_Radar.py
-│   └── 2_📈_Tek_Hisse_Analizi.py
+│   ├── 01_financial_radar.py
+│   └── 02_stock_analysis.py
 │
 └── companies/                    # Fintables Excel tabloların
     └── ASELS/ASELS (TRY).xlsx
@@ -67,11 +67,11 @@ finsight_hub/                     # ← depo kök dizini
 
 ```bash
 # 1. Repoyu klonla
-$ git clone https://github.com/senin-org/finsight_hub.git
-$ cd finsight_hub
+$ git clone https://github.com/alirizatemel/finsight-hub.git
+$ cd finsight-hub
 
 # 2. Sanal ortam oluştur (Python ≥ 3.10 önerilir)
-$ python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scriptsctivate
+$ python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
 # 3. Bağımlılıkları yükle
 $ pip install -r requirements.txt
@@ -90,9 +90,9 @@ $ streamlit run app.py
 
 ```bash
 # İmajı oluştur
-$ docker build -t finsight_hub .
+$ docker build -t finsight-hub .
 # http://localhost:8501 adresinden başlat
-$ docker run -p 8501:8501 -v $PWD/companies:/app/companies finsight_hub
+$ docker run -p 8501:8501 -v $PWD/companies:/app/companies finsight-hub
 ```
 
 ---
