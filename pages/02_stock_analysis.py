@@ -1,6 +1,6 @@
 import streamlit as st  # type: ignore
 import pandas as pd
-
+import matplotlib.pyplot as plt
 from modules.data_loader import load_financial_data
 from modules.scores import (
     calculate_scores,
@@ -10,6 +10,11 @@ from modules.scores import (
     fcf_detailed_analysis_plot,
     fcf_yield_time_series,
 )
+
+# --- yeni, önerilen yöntem -----------------------
+params = st.query_params          # doğrudan Mapping[str, str]
+default_symbol = params.get("symbol", "").upper()
+
 
 @st.cache_data(show_spinner=False)
 def get_scores_cached(symbol, radar_row, balance, income, cashflow, curr, prev):
@@ -35,7 +40,7 @@ def main():
     st.title("📈 Tek Hisse Finans Skor Kartı")
 
     # Kullanıcı girişi
-    symbol = st.text_input("Borsa Kodu", "ASELS").strip().upper()
+    symbol = st.text_input("Borsa Kodu", default_symbol).strip().upper()
     if not symbol:
         st.info("Lütfen geçerli bir borsa kodu girin.")
         st.stop()

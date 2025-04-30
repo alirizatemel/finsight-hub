@@ -176,9 +176,9 @@ def graham_score_card(row):
     lines = []
 
     kriterler = [
-        ("F/K", row.get("F/K"), lambda x: x < 15, "F/K < 15"),
-        ("PD/DD", row.get("PD/DD"), lambda x: x < 1.5, "PD/DD < 1.5"),
-        ("Cari Oran", row.get("Cari Oran"), lambda x: 2 < x < 100, "2 < Cari Oran < 100"),
+        ("F/K", round(row.get("F/K"),2), lambda x: x < 15, "F/K < 15"),
+        ("PD/DD", round(row.get("PD/DD"),2), lambda x: x < 1.5, "PD/DD < 1.5"),
+        ("Cari Oran", round(row.get("Cari Oran"),2), lambda x: 2 < x < 100, "2 < Cari Oran < 100"),
         ("Nakit Akışı", row.get("İşletme Faaliyetlerinden Nakit Akışları"), lambda x: x > 0, "İşletme Nakit Akışı > 0"),
         ("Serbest Nakit Akışı", row.get("Yıllıklandırılmış Serbest Nakit Akışı"), lambda x: x > 0, "Yıllıklandırılmış FCF > 0")
     ]
