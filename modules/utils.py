@@ -1,7 +1,7 @@
-import numpy as np
+import pandas as pd
 
 def safe_divide(numerator, denominator):
-    if denominator in [0, None, np.nan] or numerator in [None, np.nan]:
+    if pd.isna(numerator) or pd.isna(denominator) or denominator == 0:
         return 0
     return numerator / denominator
 
