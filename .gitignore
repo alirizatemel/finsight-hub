@@ -1,6 +1,5 @@
 # Çalışma klasörleri hariç tutuluyor
 companies/
-sample_data/
 
 # __pycache__ ve Python derleyici artıkları
 __pycache__/
