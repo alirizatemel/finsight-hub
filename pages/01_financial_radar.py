@@ -1,10 +1,14 @@
+import os
 import streamlit as st # type: ignore
 import pandas as pd
 from modules.data_loader import load_financial_data
-from modules.scores import calculate_piotroski_f_score, calculate_beneish_m_score, peter_lynch_score_card, graham_score
-from streamlit import column_config as cc
+from modules.scanner import run_scan                 # NEW (shared scanner)
 
-RADAR_XLSX = "companies/fintables_radar.xlsx"
+from streamlit import column_config as cc # type: ignore
+from config import RADAR_XLSX
+
+LOG_PATH = os.path.join(os.path.dirname(__file__), "..", "scanner.log")
+
 
 loglar = []
 
@@ -30,55 +34,6 @@ def link_to_analysis(ticker: str) -> str:
     (Markdown yerine <a href=…> kullanıyoruz.)
     """
     return f'<a href="/stock_analysis?symbol={ticker}" target="_self">{ticker}</a>'
-
-def build_score_table(progress_cb=None):
-    radar = load_radar()
-    companies = radar["Şirket"].unique()
-    results, logs = [], []
-    total = len(companies)
-
-    for i, c in enumerate(companies, 1):
-        row = radar[radar["Şirket"] == c]
-
-        f_skor = m_skor = None
-        try:
-            bal, inc, cf = get_financials(c)
-
-            # 🔹 şirket bazlı dönem seçimi
-            cols = [col for col in bal.columns if "/" in col]
-            cols = sorted(cols, key=period_sort_key, reverse=True)
-            if len(cols) >= 2:
-                curr, prev = cols[:2]
-                f_skor, _ = calculate_piotroski_f_score(row, bal, inc, curr, prev)
-                m_skor    = calculate_beneish_m_score(c, bal, inc, cf, curr, prev)
-            else:
-                logs.append(f"ℹ️ {c}: <2 dönem — F/M atlandı/")
-                            
-        except FileNotFoundError:
-            logs.append(f"ℹ️ {c}: Excel yok — F/M atlandı")
-        except Exception as e:
-            logs.append(f"⚠️ {c}: {e}")
-
-        lynch, *_ = peter_lynch_score_card(row)
-        graham     = graham_score(row)
-
-        results.append({
-            "Şirket"       : c,
-            "F-Skor"       : f_skor,
-            "M-Skor"       : m_skor,
-            "L-Skor"       : lynch,
-            "Graham Skoru" : graham,
-        })
-
-
-        if progress_cb:
-            progress_cb.progress(i / total)
-
-    df = pd.DataFrame(results)
-    for col in ["F-Skor", "M-Skor", "L-Skor", "Graham Skoru"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-    return df, logs
-
 
 st.title("📊 Bilanço Skorları Toplu Analiz")
 
@@ -142,57 +97,98 @@ st.sidebar.header("🔍 Skor Filtreleri")
 with st.sidebar.expander("Filtreler", expanded=True):
     f_min, f_max = st.slider("F-Skor Aralığı", 0, 9, (0, 9), key="f")
     m_min, m_max = st.slider("M-Skor Aralığı", -5.0, 5.0, (-5.0, 5.0), 0.1, key="m")
-    l_min, l_max = st.slider("Lynch Aralığı", 0, 5, (0, 5), key="l")
+    l_min, l_max = st.slider("Lynch Aralığı", 0, 3, (0, 3), key="l")
     g_min, g_max = st.slider("Graham Aralığı", 0, 5, (0, 5), key="g")
 
     colA, colB = st.columns(2)
     with colA:
-         apply = st.button("🔍 Filtrele", key="apply_filter")
+        apply = st.button("🔍 Filtrele", key="apply_filter")
+
     with colB:
         reset = st.button("🔄 Sıfırla", key="reset_filter")
 
 if reset:
     st.session_state.pop("score_df", None)
 
-# --- Build or retrieve score table ---------------------------------------
 
-if "score_df" not in st.session_state:
-    with st.spinner("Skorlar hesaplanıyor…"):
-        prog = st.progress(0)
-        score_df, logs = build_score_table(prog)
-        st.session_state["score_df"] = score_df
-        st.session_state["logs"] = logs
+# -------------------------------------------------------------------------
+# DB‑first logic (same UX as Trap Radar)
+# -------------------------------------------------------------------------
+with st.sidebar:
+    st.header("Veri Kaynağı")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Veritabanından Yükle"):
+            st.session_state.scan = True
+            st.session_state.force_refresh = False
+    with col2:
+        if st.button("Skorları Yenile"):
+            st.session_state.scan = True
+            st.session_state.force_refresh = True
+
+# -------------------------------------------------------------------------
+# DB‑first logic  (load / refresh)
+# -------------------------------------------------------------------------
+if st.session_state.get("scan"):
+
+    df_scan, logs, _ = run_scan(df_radar)
+
+    # ❷ HER İKİ DURUMDA DA DF’Yİ HAFIZADA TUT
+    st.session_state.score_df = df_scan
+    st.session_state.scan = False            # tarama bitti
+    st.session_state.force_refresh = False
+
+# ❸ EĞER SCAN YOKSA AMA DF BELLEKTEYSE ONU KULLAN
+elif "score_df" in st.session_state:
+    df_scan = st.session_state.score_df
+
+# ❹ HİÇBİR ŞEY YOKSA KULLANICIYA BİLGİ VER, STOP ETME
 else:
-    score_df = st.session_state["score_df"]
-    logs = st.session_state["logs"]
+    st.info("Önce “Veritabanından Yükle” veya “Skorları Yenile” seçeneğini tıklayın.")
+    st.stop()
 
 
-# Skor tablosunu göster
-score_df["Link"]     = "/stock_analysis?symbol=" + score_df["Şirket"]
+score_df = df_scan     # rename for clarity below
+
+symbol_col = "hisse"
+
+if symbol_col not in score_df.columns:
+    st.error(f"❌ '{symbol_col}' kolonu bulunamadı. Veri kaydedilememiş olabilir.")
+    st.stop()
+
+score_df["Link"] = "/stock_analysis?symbol=" + score_df[symbol_col]
 
 
 # Skor kolonlarını numeriğe çevir, olmayanlar NaN olur
-for col in ["F-Skor", "M-Skor", "L-Skor", "Graham Skoru"]:
+for col in ["f_skor", "m_skor", "lynch", "graham", "MOS"]:
     score_df[col] = pd.to_numeric(score_df[col], errors="coerce")
+
+# MOS'u yalnızca 0–1 aralığında ise %'ye çevir
+if "MOS_scaled" not in st.session_state:
+    score_df["MOS"] = score_df["MOS"] * 100
+    st.session_state.MOS_scaled = True
 
 # --- Uygula / sıfırla filtre --------------------------------------------
 if apply:
     filtered_df = score_df[
-        (score_df["F-Skor"] >= f_min) & (score_df["F-Skor"] <= f_max) &
-        (score_df["M-Skor"] >= m_min) & (score_df["M-Skor"] <= m_max) &
-        (score_df["L-Skor"] >= l_min) & (score_df["L-Skor"] <= l_max) &
-        (score_df["Graham Skoru"] >= g_min) & (score_df["Graham Skoru"] <= g_max)
+        (score_df["f_skor"] >= f_min) & (score_df["f_skor"] <= f_max) &
+        (score_df["m_skor"] >= m_min) & (score_df["m_skor"] <= m_max) &
+        (score_df["lynch"] >= l_min) & (score_df["lynch"] <= l_max) &
+        (score_df["graham"] >= g_min) & (score_df["graham"] <= g_max)
     ]
     st.markdown(f"**🔎 Filtrelenmiş Şirket Sayısı:** {len(filtered_df)}")
-    #st.dataframe(filtered_df.sort_values("F-Skor", ascending=False), use_container_width=True)
+    
     st.dataframe(
-        filtered_df.sort_values("F-Skor", ascending=False),
+        filtered_df.sort_values("f_skor", ascending=False),
         column_config={
             "Link": cc.LinkColumn(
                 label="Link",    # hangi kolon URL’yi tutuyor
-                display_text="Analize Git",
-                #target="_self",     # aynı sekmede aç
-            )
+                display_text="Analize Git"
+            ),
+            "MOS": cc.NumberColumn(
+                label="MOS",
+                format="%.1f%%", 
+            ),
         },
         hide_index=True,
         use_container_width=True,
@@ -203,13 +199,16 @@ else:
     st.markdown(f"**📋 Tüm Şirketler:** {len(score_df)}")
     #st.dataframe(score_df.sort_values("F-Skor", ascending=False), use_container_width=True)
     st.dataframe(
-        score_df.sort_values("F-Skor", ascending=False),
+        score_df.sort_values("f_skor", ascending=False),
         column_config={
             "Link": cc.LinkColumn(
                 label="Link",    # hangi kolon URL’yi tutuyor
-                display_text="Analize Git",
-                #target="_self",     # aynı sekmede aç
-            )
+                display_text="Analize Git"
+            ),
+            "MOS": cc.NumberColumn(
+                label="MOS",
+                format="%.1f%%", 
+            ),
         },
         hide_index=True,
         use_container_width=True,
@@ -218,6 +217,10 @@ else:
 
 
 # Logları göster
-with st.expander("🪵 Loglar"):
-    for log in loglar:
-        st.write(log)
+with st.expander("🪵 İşlem Logları (scanner.log)", expanded=False):
+    if os.path.exists(LOG_PATH):
+        with open(LOG_PATH, "r", encoding="utf-8") as f:
+            logs = f.read()
+            st.text_area("Log İçeriği", logs, height=300)
+    else:
+        st.info("Henüz log dosyası oluşturulmamış.")

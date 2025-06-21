@@ -61,7 +61,10 @@ def build_snapshot(balance_df, income_df, cashflow_df: Optional[pd.DataFrame] = 
         g_and_a_exp            = get_value(income_df, "Genel Yönetim Giderleri (-)", period),
         marketing_exp          = get_value(income_df, "Pazarlama, Satış ve Dağıtım Giderleri (-)", period),
         revenue                = get_value(income_df, "Toplam Hasılat",            period),
-
+        net_profit   = (
+            get_value(income_df, "Dönem Karı (Zararı)", period)
+            if income_df is not None else None
+        ),
         # Cash‑flow
         operating_cash_flow = (
             get_value(cashflow_df, "İşletme Faaliyetlerinden Nakit Akışları", period)
@@ -71,10 +74,7 @@ def build_snapshot(balance_df, income_df, cashflow_df: Optional[pd.DataFrame] = 
             get_value(cashflow_df, "Amortisman ve İtfa Gideri İle İlgili Düzeltmeler", period)
             if cashflow_df is not None else None
         ),
-        net_profit   = (
-            get_value(cashflow_df, "Dönem Karı (Zararı)", period)
-            if cashflow_df is not None else None
-        ),
+        
     )
 
     return snapshot
