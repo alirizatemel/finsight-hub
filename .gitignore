@@ -1,5 +1,7 @@
 # Çalışma klasörleri hariç tutuluyor
-companies/
+data/
+
+scripts/
 
 # __pycache__ ve Python derleyici artıkları
 __pycache__/

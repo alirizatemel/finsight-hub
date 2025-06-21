@@ -31,7 +31,7 @@ Veriye dayalı karar almak isteyen herkes için pratik ve esnek bir analiz platf
 
 - **Modüler yapı** – Ortak iş mantığı `modules/` klasöründedir; her `pages/` dosyası Streamlit arayüzünde bir sekme olur.
 - **Hazır finansal oranlar** – Piotroski F-Skor, Beneish M-Skor, Graham & Peter Lynch skorları, özel radar grafikler ve daha fazlası.
-- **Excel odaklı iş akışı** – Tek yapman gereken, Fintables çıktıklarını (`companies/<SEMBOL>/<SEMBOL> (TRY).xlsx`) klasörüne koymak ve analiz etmeye başlamak.
+- **Excel odaklı iş akışı** – Tek yapman gereken, Fintables çıktıklarını (`companies/<SEMBOL> (TRY).xlsx`) klasörüne koymak ve analiz etmeye başlamak.
 - **Akıcı Streamlit arayüzü** – Widget'lar, metrikler ve önbellek sistemi ile yüksek performans.
 - **Tamamen Python** – Genişletmesi kolay, yayına alması kolay (Streamlit Cloud, Hugging Face, Docker, Heroku... ne istersen).
 
@@ -54,8 +54,12 @@ finsight_hub/                     # ← depo kök dizini
 │   ├── 01_financial_radar.py
 │   └── 02_stock_analysis.py
 │
-└── companies/                    # Fintables Excel tabloların
-    └── ASELS/ASELS (TRY).xlsx
+├── data/                    # Fintables Excel tabloları
+│   └── companies/
+│       ├── ASELS (TRY).xlsx
+│       .
+│       .
+│   └── fintables_radar.xlsx
 ```
 
 > **Neden bu yapı?**  
@@ -76,10 +80,10 @@ $ python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\ac
 # 3. Bağımlılıkları yükle
 $ pip install -r requirements.txt
 
-# 4. Fintables'tan Excel çıktıklarını ./companies/ altına koy
+# 4. Fintables'tan Excel çıktıklarını ./data/companies/ altına koy
 $ tree companies -L 2
-companies/
-└── ASELS/
+data
+└── companies/
     └── ASELS (TRY).xlsx
 
 # 5. Uygulamayı çalıştır

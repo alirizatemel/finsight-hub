@@ -93,7 +93,7 @@ def update_companies_if_needed(log=lambda msg: None):
 
     driver = configure_driver()
     for ticker in tickers:
-        path = COMPANIES_DIR / ticker / f"{ticker} (TRY).xlsx"
+        path = COMPANIES_DIR / f"{ticker} (TRY).xlsx"
         if is_bilanco_outdated(path):
             log(f"🔄 {ticker} indiriliyor (veri eski veya eksik)…")
             download_excel_for(ticker, driver, log)

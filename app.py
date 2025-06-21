@@ -10,7 +10,7 @@ st.title("FinSight Hub")
 st.markdown(
     '''
     Multi‑page Streamlit app for analysing Borsa İstanbul companies.  
-    Place your **Fintables** Excel exports in `companies/<TICKER>/<TICKER> (TRY).xlsx`  
+    Place your **Fintables** Excel exports in `data/companies/<TICKER> (TRY).xlsx`  
     and pick a page from the sidebar to start exploring.
     '''
 )
