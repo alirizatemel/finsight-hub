@@ -94,7 +94,7 @@ else:
 
 st.sidebar.header("🔍 Skor Filtreleri")
 
-with st.sidebar.expander("Filtreler", expanded=True):
+with st.sidebar.expander("Filtreler", expanded=False):
     f_min, f_max = st.slider("F-Skor Aralığı", 0, 9, (0, 9), key="f")
     m_min, m_max = st.slider("M-Skor Aralığı", -5.0, 5.0, (-5.0, 5.0), 0.1, key="m")
     l_min, l_max = st.slider("Lynch Aralığı", 0, 3, (0, 3), key="l")
@@ -115,16 +115,8 @@ if reset:
 # DB‑first logic (same UX as Trap Radar)
 # -------------------------------------------------------------------------
 with st.sidebar:
-    st.header("Veri Kaynağı")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Veritabanından Yükle"):
-            st.session_state.scan = True
-            st.session_state.force_refresh = False
-    with col2:
-        if st.button("Skorları Yenile"):
-            st.session_state.scan = True
-            st.session_state.force_refresh = True
+    if st.button("Skorları Hesapla"):
+        st.session_state.scan = True
 
 # -------------------------------------------------------------------------
 # DB‑first logic  (load / refresh)
@@ -135,8 +127,7 @@ if st.session_state.get("scan"):
 
     # ❷ HER İKİ DURUMDA DA DF’Yİ HAFIZADA TUT
     st.session_state.score_df = df_scan
-    st.session_state.scan = False            # tarama bitti
-    st.session_state.force_refresh = False
+    st.session_state.scan = False            
 
 # ❸ EĞER SCAN YOKSA AMA DF BELLEKTEYSE ONU KULLAN
 elif "score_df" in st.session_state:
@@ -144,7 +135,7 @@ elif "score_df" in st.session_state:
 
 # ❹ HİÇBİR ŞEY YOKSA KULLANICIYA BİLGİ VER, STOP ETME
 else:
-    st.info("Önce “Veritabanından Yükle” veya “Skorları Yenile” seçeneğini tıklayın.")
+    st.info("Önce “Skorları Hesapla” butonuna tıklayın.")
     st.stop()
 
 

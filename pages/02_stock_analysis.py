@@ -10,6 +10,8 @@ from modules.scores import (
     fcf_detailed_analysis_plot,
     fcf_yield_time_series,
 )
+from config import RADAR_XLSX
+
 
 # --- yeni, önerilen yöntem -----------------------
 params = st.query_params          # doğrudan Mapping[str, str]
@@ -30,8 +32,7 @@ def get_financials(symbol: str):
 @st.cache_data(show_spinner=False)
 def get_radar() -> pd.DataFrame:
     """Read the pre‑built fintables_radar Excel once and cache it."""
-    radar_file = "companies/fintables_radar.xlsx"
-    df = pd.read_excel(radar_file)
+    df = pd.read_excel(RADAR_XLSX)
     df["Şirket"] = df["Şirket"].str.strip()
     return df
 
