@@ -32,7 +32,12 @@ Veriye dayalı karar almak isteyen herkes için pratik ve esnek bir analiz platf
 - **Modüler yapı** – Ortak iş mantığı `modules/` klasöründedir; her `pages/` dosyası Streamlit arayüzünde bir sekme olur.
 - **Hazır finansal oranlar** – Piotroski F-Skor, Beneish M-Skor, Graham & Peter Lynch skorları, özel radar grafikler ve daha fazlası.
 - **Excel odaklı iş akışı** – Tek yapman gereken, Fintables çıktıklarını (`companies/<SEMBOL> (TRY).xlsx`) klasörüne koymak ve analiz etmeye başlamak.
-- **Akıcı Streamlit arayüzü** – Widget'lar, metrikler ve önbellek sistemi ile yüksek performans.
+- **Skor filtreleme paneli** – F, M, Lynch, Graham skorlarına göre yatırıma uygun hisseleri süz.
+- **MOS (Margin of Safety)** – Skor kartlarında MOS yüzdesiyle hesaplanır ve filtrelemeye dahil edilir.
+- **FCF analiz sekmesi** – Şirketin serbest nakit akışı zaman serisi grafiklerle sunulur.
+- **Monte Carlo DCF** – FCF verilerine dayalı olarak içsel değeri senaryo bazlı hesaplar.
+- **Log görüntüleme** – `scanner.log` içeriği arayüzden izlenebilir.
+- **Bilanco indirici** – Eksik veya eski Excel dosyalarını Fintables'tan otomatik indirir.
 - **Tamamen Python** – Genişletmesi kolay, yayına alması kolay (Streamlit Cloud, Hugging Face, Docker, Heroku... ne istersen).
 
 ---
@@ -52,14 +57,14 @@ finsight_hub/                     # ← depo kök dizini
 │
 ├── pages/                        # Her dosya = bir Streamlit sayfası
 │   ├── 01_financial_radar.py
-│   └── 02_stock_analysis.py
+│   ├── 02_stock_analysis.py
+│   └── 03_balance_download.py
 │
-├── data/                    # Fintables Excel tabloları
-│   └── companies/
-│       ├── ASELS (TRY).xlsx
-│       .
-│       .
-│   └── fintables_radar.xlsx
+├── data/
+    └── companies/
+        ├── ASELS (TRY).xlsx
+        ├── THYAO (TRY).xlsx
+        ...
 ```
 
 > **Neden bu yapı?**  
@@ -75,16 +80,17 @@ $ git clone https://github.com/alirizatemel/finsight-hub.git
 $ cd finsight-hub
 
 # 2. Sanal ortam oluştur (Python ≥ 3.10 önerilir)
-$ python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scripts\activate
+$ python -m venv .venv && source .venv/bin/activate  # Windows: .venv\Scriptsctivate
 
 # 3. Bağımlılıkları yükle
 $ pip install -r requirements.txt
 
 # 4. Fintables'tan Excel çıktıklarını ./data/companies/ altına koy
-$ tree companies -L 2
-data
-└── companies/
-    └── ASELS (TRY).xlsx
+$ tree data/companies -L 1
+companies/
+├── ASELS (TRY).xlsx
+├── THYAO (TRY).xlsx
+...
 
 # 5. Uygulamayı çalıştır
 $ streamlit run app.py
@@ -105,7 +111,7 @@ $ docker run -p 8501:8501 -v $PWD/companies:/app/companies finsight-hub
 
 | Ayar                          | Nerede                              | Varsayılan | Notlar |
 |------------------------------|-------------------------------------|-------------|--------|
-| **Excel klasörü**           | `load_company_xlsx(base_dir=...)`  | `companies/` | Her sembol için bir alt klasör |
+| **Excel klasörü**           | `load_company_xlsx(base_dir=...)`  | `companies/` | Dosyalar tek katmanda tutulur |
 | **Cache süresi (TTL)**     | `@st.cache_data(ttl=3600)`         | `3600 s`    | Dosyalar nadiren değişiyorsa artırılabilir |
 | **Sayfa sırası & etiket**  | Ön ek (`1_`, `2_`) + emoji        | Yok        | Sayfa adlarını dilediğin gibi değiştirebilirsin |
 
