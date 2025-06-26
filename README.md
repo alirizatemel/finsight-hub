@@ -108,11 +108,13 @@ FinSight Hub uygulamasının çalışabilmesi için `data/companies/` klasörün
 ### 1. Şirket Bazlı Excel Dosyaları
 
 Her şirket için Fintables platformundan indirilen mali tablo dosyaları şu formatta yerleştirilmelidir:
+```text
     data/
     └── companies/
         ├── ASELS (TRY).xlsx
         ├── THYAO (TRY).xlsx
         ...
+```
 
 > 🔹 Bu dosyalar Fintables’ın **şirket detay sayfalarından** alınan bilanço, gelir tablosu ve nakit akış verilerini içermelidir.
 
