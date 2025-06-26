@@ -42,7 +42,12 @@ Veriye dayalı karar almak isteyen herkes için pratik ve esnek bir analiz platf
 
 ---
 
-(`companies/<SEMBOL> (TRY).xlsx`) klasörüne koyulmalı, ayrıca Fintables - Hisseler sayfasında
+## 🖼️ Uygulamadan Görünüm
+
+Aşağıda FinSight Hub arayüzünden bir örnek görüntü yer almaktadır:
+
+![FinSight Hub Görsel](assets/screenshot.png)
+
 
 ## 🗂️ Proje Yapısı
 
