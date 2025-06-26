@@ -135,7 +135,7 @@ Bu Excel dosyasında şu sütun başlıkları yer almalıdır:
 |------------------------------|-------------------------------------|-------------|--------|
 | **Excel klasörü**           | `load_company_xlsx(base_dir=...)`  | `companies/` | Dosyalar tek katmanda tutulur |
 | **Cache süresi (TTL)**     | `@st.cache_data(ttl=3600)`         | `3600 s`    | Dosyalar nadiren değişiyorsa artırılabilir |
-| **Sayfa sırası & etiket**  | Ön ek (`1_`, `2_`) + emoji        | Yok        | Sayfa adlarını dilediğin gibi değiştirebilirsin |
+| **Sayfa sırası & etiket**  | Ön ek (`1_`, `2_`)        | Yok        | Sayfa adlarını dilediğin gibi değiştirebilirsin |
 
 ---
 
