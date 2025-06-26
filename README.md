@@ -31,7 +31,7 @@ Veriye dayalı karar almak isteyen herkes için pratik ve esnek bir analiz platf
 
 - **Modüler yapı** – Ortak iş mantığı `modules/` klasöründedir; her `pages/` dosyası Streamlit arayüzünde bir sekme olur.
 - **Hazır finansal oranlar** – Piotroski F-Skor, Beneish M-Skor, Graham & Peter Lynch skorları, özel radar grafikler ve daha fazlası.
-- **Excel odaklı iş akışı** – Tek yapman gereken, Fintables çıktıklarını (`companies/<SEMBOL> (TRY).xlsx`) klasörüne koymak ve analiz etmeye başlamak.
+- **Excel odaklı iş akışı** – Fintables şirket finans tablolarının çıktıklarını (`companies/<SEMBOL> (TRY).xlsx`) analiz eder.
 - **Skor filtreleme paneli** – F, M, Lynch, Graham skorlarına göre yatırıma uygun hisseleri süz.
 - **MOS (Margin of Safety)** – Skor kartlarında MOS yüzdesiyle hesaplanır ve filtrelemeye dahil edilir.
 - **FCF analiz sekmesi** – Şirketin serbest nakit akışı zaman serisi grafiklerle sunulur.
@@ -41,6 +41,8 @@ Veriye dayalı karar almak isteyen herkes için pratik ve esnek bir analiz platf
 - **Tamamen Python** – Genişletmesi kolay, yayına alması kolay (Streamlit Cloud, Hugging Face, Docker, Heroku... ne istersen).
 
 ---
+
+(`companies/<SEMBOL> (TRY).xlsx`) klasörüne koyulmalı, ayrıca Fintables - Hisseler sayfasında
 
 ## 🗂️ Proje Yapısı
 
@@ -65,6 +67,7 @@ finsight_hub/                     # ← depo kök dizini
         ├── ASELS (TRY).xlsx
         ├── THYAO (TRY).xlsx
         ...
+    └── fintables_radar.xlsx
 ```
 
 > **Neden bu yapı?**  
@@ -96,14 +99,33 @@ companies/
 $ streamlit run app.py
 ```
 
-### (Opsiyonel) Docker ile çalıştırma
+---
 
-```bash
-# İmajı oluştur
-$ docker build -t finsight-hub .
-# http://localhost:8501 adresinden başlat
-$ docker run -p 8501:8501 -v $PWD/companies:/app/companies finsight-hub
-```
+## 📥 Veri Hazırlığı
+
+FinSight Hub uygulamasının çalışabilmesi için `data/companies/` klasörüne hisse bazlı Excel dosyaları eklenmelidir.
+
+### 1. Şirket Bazlı Excel Dosyaları
+
+Her şirket için Fintables platformundan indirilen mali tablo dosyaları şu formatta yerleştirilmelidir:
+    data/
+    └── companies/
+        ├── ASELS (TRY).xlsx
+        ├── THYAO (TRY).xlsx
+        ...
+
+> 🔹 Bu dosyalar Fintables’ın **şirket detay sayfalarından** alınan bilanço, gelir tablosu ve nakit akış verilerini içermelidir.
+
+### 2. Toplu Liste Excel Dosyası 
+
+Fintables’ın **“Hisseler”** sekmesinden alınan ve tüm şirketlere ait özet verileri içeren bir dosya da aynı klasöre eklenmelidir.
+
+Bu Excel dosyasında şu sütun başlıkları yer almalıdır:
+
+`Şirket`, `Son Fiyat`, `Gün %`, `Hacim`, `Piyasa Değeri`, `Net Dönem Karı`, `İşletme Faaliyetlerinden Nakit Akışları`, `Finansman Faaliyetlerinden Nakit Akışları`, `Yıllıklandırılmış Serbest Nakit Akışı`, `Yatırım Faaliyetlerinden Nakit Akışları`, `Nakitlerdeki Değişim`, `Çeyreklik Serbest Nakit Akışı`, `Yıllık İşletme Faaliyetleri Nakit Akış Değişimi`, `Net Borç`, `Dönen Varlıklar`, `Kısa Vadeli Yükümlülükler`, `Brüt Kar`, `Satışlar`, `Toplam Varlıklar`, `Özkaynaklar`, `F/K`, `Cari Oran`, `PD/DD`, `FD/FAVÖK`, `FD/Satış`, `PEG`
+
+> 📌 **Not:** Dosya adı `fintables_radar.xlsx` olabilir. Önemli olan yukarıdaki sütun adlarının birebir bulunmasıdır.
+
 
 ---
 
